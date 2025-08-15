@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Barneomsorg Dekningsplanlegger</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general body */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Sticky column for table - ensures the "Person" column stays visible when scrolling horizontally */
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: white; /* Ensure background is white */
+            z-index: 10; /* Above other cells */
+        }
+        /* Adjust for header row sticky - "Person" header */
+        #weekHeaderRow th:first-child {
+            z-index: 20; /* Higher than sticky-col for body rows */
+        }
+        /* Sticky for person names in the table body */
+        #coverageTableBody tr td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 5; /* Lower than header sticky, higher than other cells */
+        }
+        /* Sticky for "Dekning" in the footer */
+        #summaryRow th:first-child {
+            position: sticky;
+            left: 0;
+            background-color: #f3f4f6; /* bg-gray-100 */
+            z-index: 10;
+        }
+
+        /* Styling for checkboxes within the table cells */
+        .week-checkbox {
+            @apply w-5 h-5 cursor-pointer border-gray-300 rounded focus:ring-blue-500 text-blue-600;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8">
+    <div class="max-w-6xl mx-auto bg-white p-6 sm:p-8 rounded-xl shadow-lg">
+        <h1 class="text-3xl sm:text-4xl font-bold text-center text-gray-800 mb-6">Barneomsorg Dekningsplanlegger</h1>
+        <p class="text-center text-gray-600 mb-8">Fyll inn informasjon for å se din barneomsorgsdekning frem til barnehagestart.</p>
+
+        <!-- Input Section -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Barnets fødselsdato -->
+            <div class="flex flex-col">
+                <label for="birthDate" class="text-gray-700 font-semibold mb-2">Barnets fødselsdato:</label>
+                <input type="date" id="birthDate" class="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
+            <!-- Barnehagestart (ca.) -->
+            <div class="flex flex-col">
+                <label for="kindergartenStart" class="text-gray-700 font-semibold mb-2">Forventet barnehagestart (ca.):</label>
+                <input type="date" id="kindergartenStart" class="p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Foreldrepermisjon</h2>
+            <div id="parentsContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Parent 1 Input Fields (Mor) -->
+                <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
+                    <h3 class="text-gray-700 font-bold mb-3">Mor</h3>
+                    <label for="parent1LeaveStart" class="text-gray-700 font-semibold mb-2 block">Permisjon start:</label>
+                    <input type="date" id="parent1LeaveStart" class="w-full p-3 border border-blue-200 rounded-md mb-3 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="parent1LeaveWeeks" class="text-gray-700 font-semibold mb-2 block">Antall uker permisjon:</label>
+                    <input type="number" id="parent1LeaveWeeks" value="49" min="0" class="w-full p-3 border border-blue-200 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    <p id="parent1LeaveEndText" class="mt-2 text-sm text-gray-600 font-medium"></p>
+                </div>
+                <!-- Parent 2 Input Fields (Far) -->
+                <div class="bg-blue-50 p-4 rounded-lg shadow-sm">
+                    <h3 class="text-gray-700 font-bold mb-3">Far</h3>
+                    <label for="parent2LeaveStart" class="text-gray-700 font-semibold mb-2 block">Permisjon start:</label>
+                    <input type="date" id="parent2LeaveStart" class="w-full p-3 border border-blue-200 rounded-md mb-3 focus:ring-blue-500 focus:border-blue-500">
+                    <label for="parent2LeaveWeeks" class="text-gray-700 font-semibold mb-2 block">Antall uker permisjon:</label>
+                    <input type="number" id="parent2LeaveWeeks" value="15" min="0" class="w-full p-3 border border-blue-200 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                    <p id="parent2LeaveEndText" class="mt-2 text-sm text-gray-600 font-medium"></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Andre bidragsytere</h2>
+            <div id="otherCaregiversContainer" class="space-y-4">
+                <!-- Other caregivers will be added here dynamically -->
+            </div>
+            <button id="addCaregiverBtn" class="mt-4 px-6 py-3 bg-green-500 text-white font-bold rounded-lg shadow-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 transition duration-200">
+                Legg til person
+            </button>
+        </div>
+
+        <!-- Calculate Button (kept for manual trigger, though auto-updates are active) -->
+        <button id="calculateBtn" class="w-full px-8 py-4 bg-indigo-600 text-white text-xl font-bold rounded-lg shadow-xl hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-75 transition duration-200 mb-8">
+            Beregn Dekning
+        </button>
+
+        <!-- Output Section - Initially hidden -->
+        <div id="coverageOutput" class="overflow-x-auto bg-gray-50 p-4 rounded-lg shadow-inner hidden">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ukesoversikt Dekning</h2>
+            <!-- New dynamic status message -->
+            <div id="coverageStatus" class="p-4 rounded-lg text-center mb-4 text-sm font-medium"></div>
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-100">
+                    <tr id="weekHeaderRow">
+                        <th rowspan="2" class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-100 z-10 align-bottom">Person</th>
+                    </tr>
+                    <tr id="weekDateHeaderRow">
+                        <!-- Denne raden vil fylles dynamisk med datoer -->
+                    </tr>
+                </thead>
+                <tbody id="coverageTableBody" class="bg-white divide-y divide-gray-200">
+                    <!-- Caregiver rows will be inserted here by JavaScript -->
+                </tbody>
+                <tfoot class="bg-gray-100">
+                    <tr id="summaryRow">
+                        <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-100 z-10">Dekning</th>
+                    </tr>
+                </tfoot>
+            </table>
+            <p id="noCoverageMessage" class="text-red-600 text-center mt-4 hidden">Fyll inn alle nødvendige felter og klikk "Beregn Dekning" for å se ukesoversikten.</p>
+        </div>
+    </div>
+
+    <script>
+        // --- DOM Element Referanser ---
+        const birthDateInput = document.getElementById('birthDate');
+        const kindergartenStartInput = document.getElementById('kindergartenStart');
+        const parent1LeaveStartInput = document.getElementById('parent1LeaveStart');
+        const parent1LeaveWeeksInput = document.getElementById('parent1LeaveWeeks');
+        const parent1LeaveEndText = document.getElementById('parent1LeaveEndText');
+        const parent2LeaveStartInput = document.getElementById('parent2LeaveStart');
+        const parent2LeaveWeeksInput = document.getElementById('parent2LeaveWeeks');
+        const parent2LeaveEndText = document.getElementById('parent2LeaveEndText');
+        const otherCaregiversContainer = document.getElementById('otherCaregiversContainer');
+        const addCaregiverBtn = document.getElementById('addCaregiverBtn');
+        const calculateBtn = document.getElementById('calculateBtn');
+        const coverageOutput = document.getElementById('coverageOutput');
+        const weekHeaderRow = document.getElementById('weekHeaderRow');
+        const weekDateHeaderRow = document.getElementById('weekDateHeaderRow');
+        const coverageTableBody = document.getElementById('coverageTableBody');
+        const summaryRow = document.getElementById('summaryRow');
+        const noCoverageMessage = document.getElementById('noCoverageMessage');
+        const coverageStatus = document.getElementById('coverageStatus');
+
+        // --- Globale Variabler ---
+        let caregivers = [];
+        let otherCaregiversCount = 0;
+
+        // --- Hjelpefunksjoner for Datoer ---
+
+        /**
+         * Henter mandagen i uken for en gitt dato.
+         * @param {Date} d - Datoen å finne mandagen for.
+         * @returns {Date} En ny datoobjekt som representerer mandagen i uken.
+         */
+        function getMonday(d) {
+            d = new Date(d);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.getFullYear(), d.getMonth(), diff);
+        }
+
+        /**
+         * Legger til et gitt antall uker til en dato.
+         * @param {Date} date - Startdatoen.
+         * @param {number} weeks - Antall uker å legge til.
+         * @returns {Date} En ny datoobjekt etter å ha lagt til ukene.
+         */
+        function addWeeks(date, weeks) {
+            const newDate = new Date(date);
+            newDate.setDate(newDate.getDate() + weeks * 7);
+            return newDate;
+        }
+
+        /**
+         * Henter ISO-ukenr for en gitt dato.
+         * @param {Date} d - Datoen.
+         * @returns {number} Ukenummeret.
+         */
+        function getWeekNumber(d) {
+            d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+            d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+            const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+            const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+            return weekNo;
+        }
+
+        /**
+         * Formaterer en dato til DD.MM.YYYY streng.
+         * @param {Date} date - Datoen som skal formateres.
+         * @returns {string} Den formaterte datostrengen.
+         */
+        function formatDate(date) {
+            const d = new Date(date);
+            const day = String(d.getDate()).padStart(2, '0');
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const year = d.getFullYear();
+            return `${day}.${month}.${year}`;
+        }
+
+        // --- Initialisering av Omsorgspersoner ---
+        function initializeCaregivers() {
+            caregivers = [
+                { id: 'parent1', name: 'Mor', type: 'parent', leaveStartDate: null, leaveEndDate: null },
+                { id: 'parent2', name: 'Far', type: 'parent', leaveStartDate: null, leaveEndDate: null }
+            ];
+        }
+
+        // --- Legg til Andre Bidragsytere ---
+        function addOtherCaregiver() {
+            otherCaregiversCount++;
+            const newCaregiver = {
+                id: `other-${Date.now()}`,
+                name: `Ny person ${otherCaregiversCount}`,
+                type: 'other',
+                weeklyAvailability: {}
+            };
+            caregivers.push(newCaregiver);
+
+            const caregiverDiv = document.createElement('div');
+            caregiverDiv.className = 'bg-purple-50 p-4 rounded-lg shadow-sm flex flex-col';
+            caregiverDiv.innerHTML = `
+                <label for="${newCaregiver.id}-name" class="text-gray-700 font-semibold mb-2 block">Navn (${newCaregiver.name}):</label>
+                <input type="text" id="${newCaregiver.id}-name" value="${newCaregiver.name}" class="w-full p-3 border border-purple-200 rounded-md mb-3 focus:ring-purple-500 focus:border-purple-500">
+                <button type="button" class="remove-caregiver-btn mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-75 self-end transition duration-200" data-id="${newCaregiver.id}">Fjern</button>
+            `;
+            otherCaregiversContainer.appendChild(caregiverDiv);
+
+            caregiverDiv.querySelector(`#${newCaregiver.id}-name`).addEventListener('input', (e) => {
+                const caregiverToUpdate = caregivers.find(c => c.id === newCaregiver.id);
+                if (caregiverToUpdate) {
+                    caregiverToUpdate.name = e.target.value;
+                    calculateCoverage();
+                }
+            });
+
+            caregiverDiv.querySelector('.remove-caregiver-btn').addEventListener('click', (e) => {
+                const idToRemove = e.target.dataset.id;
+                caregivers = caregivers.filter(c => c.id !== idToRemove);
+                caregiverDiv.remove();
+                calculateCoverage();
+            });
+
+            calculateCoverage();
+        }
+
+        // --- Beregn og Vis Dekning ---
+        function calculateCoverage() {
+            noCoverageMessage.classList.add('hidden');
+            coverageOutput.classList.remove('hidden');
+
+            const childBirthDate = birthDateInput.valueAsDate;
+            const kindergartenStartDate = kindergartenStartInput.valueAsDate;
+
+            const parent1LeaveStartDate = parent1LeaveStartInput.valueAsDate;
+            const parent1LeaveWeeks = parseInt(parent1LeaveWeeksInput.value, 10) || 0;
+            if (parent1LeaveStartDate) {
+                caregivers[0].leaveStartDate = parent1LeaveStartDate;
+                caregivers[0].leaveEndDate = addWeeks(parent1LeaveStartDate, parent1LeaveWeeks - 1); // Trekk fra 1 for å inkludere startuken
+            }
+
+            const parent2LeaveStartDate = parent2LeaveStartInput.valueAsDate;
+            const parent2LeaveWeeks = parseInt(parent2LeaveWeeksInput.value, 10) || 0;
+            if (parent2LeaveStartDate) {
+                caregivers[1].leaveStartDate = parent2LeaveStartDate;
+                caregivers[1].leaveEndDate = addWeeks(parent2LeaveStartDate, parent2LeaveWeeks - 1); // Trekk fra 1 for å inkludere startuken
+            }
+
+            // Oppdater visning av sluttdato for permisjon
+            if (caregivers[0].leaveEndDate && caregivers[0].leaveStartDate) {
+                const endWeek = getWeekNumber(caregivers[0].leaveEndDate);
+                parent1LeaveEndText.textContent = `Ferdig i uke ${endWeek}, ${formatDate(caregivers[0].leaveEndDate)}.`;
+            } else {
+                parent1LeaveEndText.textContent = '';
+            }
+            if (caregivers[1].leaveEndDate && caregivers[1].leaveStartDate) {
+                const endWeek = getWeekNumber(caregivers[1].leaveEndDate);
+                parent2LeaveEndText.textContent = `Ferdig i uke ${endWeek}, ${formatDate(caregivers[1].leaveEndDate)}.`;
+            } else {
+                parent2LeaveEndText.textContent = '';
+            }
+
+            if (!childBirthDate || !kindergartenStartDate) {
+                noCoverageMessage.classList.remove('hidden');
+                coverageOutput.classList.add('hidden');
+                return;
+            }
+
+            if (kindergartenStartDate < childBirthDate) {
+                noCoverageMessage.textContent = "Barnehagestart kan ikke være før barnets fødselsdato.";
+                noCoverageMessage.classList.remove('hidden');
+                coverageOutput.classList.add('hidden');
+                return;
+            }
+
+            const startOfChildsFirstWeek = getMonday(childBirthDate);
+            const startOfKindergartenWeek = getMonday(kindergartenStartDate);
+            const diffTime = Math.abs(startOfKindergartenWeek.getTime() - startOfChildsFirstWeek.getTime());
+            const numWeeks = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+
+            const maxWeeks = 104;
+            const actualNumWeeks = Math.min(numWeeks, maxWeeks);
+
+            // Generer ukeoverskrifter med ukenummer og dato
+            weekHeaderRow.innerHTML = `<th rowspan="2" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-100 z-10 align-bottom">Person</th>`;
+            weekDateHeaderRow.innerHTML = '';
+
+            const weekStartDates = [];
+            for (let i = 0; i < actualNumWeeks; i++) {
+                const weekStartDate = addWeeks(startOfChildsFirstWeek, i);
+                weekStartDates.push(weekStartDate);
+                
+                const weekNumTh = document.createElement('th');
+                weekNumTh.className = 'px-4 py-1 text-center text-xs font-bold text-gray-700 uppercase tracking-wider';
+                weekNumTh.textContent = `Uke ${getWeekNumber(weekStartDate)}`;
+                weekHeaderRow.appendChild(weekNumTh);
+
+                const weekDateTh = document.createElement('th');
+                weekDateTh.className = 'px-4 py-1 text-center text-[10px] font-medium text-gray-500 tracking-wider';
+                weekDateTh.textContent = formatDate(weekStartDate);
+                weekDateHeaderRow.appendChild(weekDateTh);
+            }
+
+            coverageTableBody.innerHTML = '';
+            summaryRow.innerHTML = '<th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-100 z-10">Dekning</th>';
+
+            const weeklyCoverageSummary = Array(actualNumWeeks).fill(false);
+
+            caregivers.forEach(person => {
+                const row = document.createElement('tr');
+                row.className = 'hover:bg-gray-50';
+
+                const nameCell = document.createElement('td');
+                nameCell.className = 'px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 sticky left-0 bg-white';
+                nameCell.textContent = person.name;
+                row.appendChild(nameCell);
+
+                for (let i = 0; i < actualNumWeeks; i++) {
+                    const weekNum = i + 1;
+                    const weekStartDate = weekStartDates[i];
+                    const cell = document.createElement('td');
+                    cell.className = 'px-3 py-2 whitespace-nowrap text-sm text-gray-500 text-center';
+
+                    let isAvailable = false;
+
+                    if (person.type === 'parent') {
+                        if (person.leaveStartDate && person.leaveEndDate && weekStartDate >= person.leaveStartDate && weekStartDate <= person.leaveEndDate) {
+                            isAvailable = true;
+                        }
+                        cell.classList.add(isAvailable ? 'bg-green-100' : 'bg-red-100');
+                        cell.title = isAvailable ? 'Dekket' : 'Ikke dekket';
+                        cell.textContent = isAvailable ? '✔️' : '❌';
+                    } else if (person.type === 'other') {
+                        isAvailable = !!person.weeklyAvailability[weekNum];
+                        const checkbox = document.createElement('input');
+                        checkbox.type = 'checkbox';
+                        checkbox.className = 'week-checkbox';
+                        checkbox.checked = isAvailable;
+                        checkbox.dataset.caregiverId = person.id;
+                        checkbox.dataset.weekNum = weekNum;
+
+                        checkbox.addEventListener('change', (e) => {
+                            const cId = e.target.dataset.caregiverId;
+                            const wNum = parseInt(e.target.dataset.weekNum);
+                            const caregiver = caregivers.find(c => c.id === cId);
+                            if (caregiver) {
+                                caregiver.weeklyAvailability[wNum] = e.target.checked;
+                                calculateCoverage();
+                            }
+                        });
+                        cell.appendChild(checkbox);
+                        cell.classList.add(isAvailable ? 'bg-purple-100' : 'bg-gray-100');
+                    }
+
+                    if (isAvailable) {
+                        weeklyCoverageSummary[i] = true;
+                    }
+                    row.appendChild(cell);
+                }
+                coverageTableBody.appendChild(row);
+            });
+
+            let isFullyCovered = true;
+            weeklyCoverageSummary.forEach((isCovered, index) => {
+                const cell = document.createElement('td');
+                cell.className = 'px-3 py-2 whitespace-nowrap text-sm font-bold text-center';
+                if (isCovered) {
+                    cell.classList.add('bg-green-200', 'text-green-800');
+                    cell.textContent = 'Dekket';
+                } else {
+                    cell.classList.add('bg-red-200', 'text-red-800');
+                    cell.textContent = 'Manglende';
+                    isFullyCovered = false;
+                }
+                summaryRow.appendChild(cell);
+            });
+
+            // Oppdater den dynamiske statusmeldingen
+            if (isFullyCovered) {
+                coverageStatus.textContent = '🥳 Gratulerer! Hele perioden frem til barnehagestart er dekket!';
+                coverageStatus.className = 'p-4 rounded-lg text-center mb-4 text-sm font-medium bg-green-200 text-green-800';
+            } else {
+                coverageStatus.textContent = '⚠️ Det er manglende dekning i perioden. Legg til flere bidragsytere eller juster permisjonsukene for å sikre full dekning.';
+                coverageStatus.className = 'p-4 rounded-lg text-center mb-4 text-sm font-medium bg-yellow-100 text-yellow-800';
+            }
+        }
+
+        // --- Event Listenere ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = new Date();
+            const threeMonthsFromNow = new Date(today);
+            threeMonthsFromNow.setMonth(today.getMonth() + 3);
+            const kindergartenDefault = new Date(today);
+            kindergartenDefault.setFullYear(today.getFullYear() + 1);
+            kindergartenDefault.setMonth(kindergartenDefault.getMonth() + 1);
+
+            birthDateInput.valueAsDate = today;
+            parent1LeaveStartInput.valueAsDate = today;
+            parent2LeaveStartInput.valueAsDate = threeMonthsFromNow;
+            kindergartenStartInput.valueAsDate = kindergartenDefault;
+
+            initializeCaregivers();
+            calculateCoverage();
+        });
+
+        calculateBtn.addEventListener('click', calculateCoverage);
+        addCaregiverBtn.addEventListener('click', addOtherCaregiver);
+
+        birthDateInput.addEventListener('change', calculateCoverage);
+        kindergartenStartInput.addEventListener('change', calculateCoverage);
+        parent1LeaveStartInput.addEventListener('change', calculateCoverage);
+        parent1LeaveWeeksInput.addEventListener('input', calculateCoverage);
+        parent2LeaveStartInput.addEventListener('change', calculateCoverage);
+        parent2LeaveWeeksInput.addEventListener('input', calculateCoverage);
+
+    </script>
+</body>
+</html>
