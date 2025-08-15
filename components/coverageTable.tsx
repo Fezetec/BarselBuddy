@@ -1,19 +1,28 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  Alert,
-  Platform,
-} from 'react-native';
-import { getMonday, addWeeks, getWeekNumber, formatDate, parseDate } from '../scripts/dateHelper';
+import { View, Text, ScrollView, Switch } from 'react-native';
 import styles from '../styles/styles';
 
-// --- Komponent for Dekningstabellen ---
-const CoverageTable = ({ weekHeaders, coverageData, weeklyCoverageSummary, onToggleAvailability }) => (
+interface Week {
+  weekNum: number;
+  date: string;
+  type: string;
+  isAvailable: boolean;
+  caregiverId?: string;
+}
+
+interface Person {
+  id: string;
+  name: string;
+  weeks: Week[];
+}
+
+interface CoverageTableProps {
+  weekHeaders: { weekNum: number; date: string }[];
+  coverageData: Person[];
+  weeklyCoverageSummary: boolean[];
+  onToggleAvailability: (caregiverId: string, weekNum: number, value: boolean) => void;
+}
+
+const CoverageTable: React.FC<CoverageTableProps> = ({ weekHeaders, coverageData, weeklyCoverageSummary, onToggleAvailability }) => (
   <View style={styles.outputSection}>
     <Text style={styles.sectionTitle}>Ukesoversikt Dekning</Text>
     <ScrollView horizontal style={styles.tableScrollView}>
@@ -62,7 +71,7 @@ const CoverageTable = ({ weekHeaders, coverageData, weeklyCoverageSummary, onTog
                 ) : (
                   <Switch
                     value={week.isAvailable}
-                    onValueChange={(value) => onToggleAvailability(week.caregiverId, week.weekNum, value)}
+                    onValueChange={(value) => onToggleAvailability(week.caregiverId ?? '', week.weekNum, value)}
                     trackColor={{ false: '#767577', true: '#81b0ff' }}
                     thumbColor={week.isAvailable ? '#f5dd4b' : '#f4f3f4'}
                   />

@@ -6,7 +6,7 @@
  * @param {Date} d - Datoen å finne mandagen for.
  * @returns {Date} En ny datoobjekt som representerer mandagen i uken.
  */
-export function getMonday(d) {
+export function getMonday(d: Date) {
   d = new Date(d);
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
@@ -19,7 +19,7 @@ export function getMonday(d) {
  * @param {number} weeks - Antall uker å legge til.
  * @returns {Date} En ny datoobjekt etter å ha lagt til ukene.
  */
-export function addWeeks(date, weeks) {
+export function addWeeks(date: Date, weeks: number) {
   const newDate = new Date(date);
   newDate.setDate(newDate.getDate() + weeks * 7);
   return newDate;
@@ -30,11 +30,11 @@ export function addWeeks(date, weeks) {
  * @param {Date} d - Datoen.
  * @returns {number} Ukenummeret.
  */
-export function getWeekNumber(d) {
+export function getWeekNumber(d: Date) {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  const weekNo = Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
   return weekNo;
 }
 
@@ -43,7 +43,7 @@ export function getWeekNumber(d) {
  * @param {Date} date - Datoen som skal formateres.
  * @returns {string} Den formaterte datostrengen.
  */
-export function formatDate(date) {
+export function formatDate(date: Date) {
   if (!date) return '';
   const d = new Date(date);
   const day = String(d.getDate()).padStart(2, '0');
@@ -57,7 +57,7 @@ export function formatDate(date) {
  * @param {string} dateString - Dato-strengen i DD.MM.YYYY format.
  * @returns {Date | null} Det parserte Date-objektet eller null hvis ugyldig.
  */
-export function parseDate(dateString) {
+export function parseDate(dateString: string) {
   if (!dateString) return null;
   const parts = dateString.split('.');
   if (parts.length === 3) {

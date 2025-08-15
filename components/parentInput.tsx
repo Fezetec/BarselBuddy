@@ -1,19 +1,16 @@
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  Alert,
-  Platform,
-} from 'react-native';
-import { getMonday, addWeeks, getWeekNumber, formatDate, parseDate } from '../scripts/dateHelper';
+import { View, Text, TextInput, Platform } from 'react-native';
+import { addWeeks, getWeekNumber, formatDate, parseDate } from '../scripts/dateHelper';
 import styles from '../styles/styles';
 
-// --- Komponent for Foreldrepermisjon-input ---
-const ParentInput = ({ name, leaveStart, setLeaveStart, leaveWeeks, setLeaveWeeks }) => {
+interface ParentInputProps {
+  name: string;
+  leaveStart: string;
+  setLeaveStart: (value: string) => void;
+  leaveWeeks: number;
+  setLeaveWeeks: (value: number) => void;
+}
+
+const ParentInput: React.FC<ParentInputProps> = ({ name, leaveStart, setLeaveStart, leaveWeeks, setLeaveWeeks }) => {
   const leaveStartDate = parseDate(leaveStart);
   const leaveEndDate = leaveStartDate ? addWeeks(leaveStartDate, leaveWeeks - 1) : null;
   const endWeek = leaveEndDate ? getWeekNumber(leaveEndDate) : null;

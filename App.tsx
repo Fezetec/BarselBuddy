@@ -10,17 +10,7 @@
 // }
 
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Switch,
-  Alert,
-  Platform,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { getMonday, addWeeks, getWeekNumber, formatDate, parseDate } from './scripts/dateHelper';
 import CoverageTable from './components/coverageTable';
 import ParentInput from './components/parentInput';
@@ -28,16 +18,23 @@ import OtherCaregiverInput from './components/otherCaregiverInput';
 import styles from './styles/styles';
 
 const App = () => {
+  interface Caregiver {
+    id: string;
+    name: string;
+    type: 'parent' | 'other';
+    weeklyAvailability: Record<number, boolean>;
+  }
+
   const [childBirthDateStr, setChildBirthDateStr] = useState('');
   const [kindergartenStartStr, setKindergartenStartStr] = useState('');
   const [parent1LeaveStartStr, setParent1LeaveStartStr] = useState('');
   const [parent1LeaveWeeks, setParent1LeaveWeeks] = useState(49);
   const [parent2LeaveStartStr, setParent2LeaveStartStr] = useState('');
   const [parent2LeaveWeeks, setParent2LeaveWeeks] = useState(15);
-  const [otherCaregivers, setOtherCaregivers] = useState([]);
+  const [otherCaregivers, setOtherCaregivers] = useState<Caregiver[]>([]);
   const [coverageData, setCoverageData] = useState([]);
   const [weeklyCoverageSummary, setWeeklyCoverageSummary] = useState([]);
-  const [weekHeaders, setWeekHeaders] = useState([]);
+  const [weekHeaders, setWeekHeaders] = useState<{ weekNum: string; date: string }[]>([]);
   const [coverageStatus, setCoverageStatus] = useState('');
 
   // Initial data setup
@@ -72,16 +69,17 @@ const App = () => {
     const newCaregiver = {
       id: `other-${Date.now()}`,
       name: `Ny person ${otherCaregivers.length + 1}`,
+      type: 'other',
       weeklyAvailability: {},
     };
     setOtherCaregivers(prev => [...prev, newCaregiver]);
   };
 
-  const removeOtherCaregiver = (idToRemove) => {
+  const removeOtherCaregiver = (idToRemove: string) => {
     setOtherCaregivers(prev => prev.filter(c => c.id !== idToRemove));
   };
 
-  const toggleCaregiverAvailability = (caregiverId, weekNum, value) => {
+  const toggleCaregiverAvailability = (caregiverId: string, weekNum: number, value: boolean) => {
     setOtherCaregivers(prev =>
       prev.map(caregiver =>
         caregiver.id === caregiverId
@@ -131,7 +129,7 @@ const App = () => {
     const actualNumWeeks = Math.min(numWeeks, maxWeeks);
 
     const newWeekHeaders = [];
-    const weekStartDates = [];
+    const weekStartDates: Date[] = [];
     for (let i = 0; i < actualNumWeeks; i++) {
       const weekStartDate = addWeeks(startOfChildsFirstWeek, i);
       weekStartDates.push(weekStartDate);
@@ -142,7 +140,7 @@ const App = () => {
     }
     setWeekHeaders(newWeekHeaders);
 
-    const newCoverageData = [];
+    const newCoverageData: { id: string; name: string; weeks: { weekNum: number; isAvailable: boolean; type: string; caregiverId: string }[] }[] = [];
     const newWeeklyCoverageSummary = Array(actualNumWeeks).fill(false);
 
     allCaregivers.forEach(person => {
